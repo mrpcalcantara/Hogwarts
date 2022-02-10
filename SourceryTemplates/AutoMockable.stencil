@@ -7,57 +7,14 @@ import UIKit
 #elseif os(OSX)
 import AppKit
 #endif
-{% macro mockedVariableName variable %}
-    var {{ variable.name }}: {{ variable.typeName }}
-{% endmacro %}
 
-{% macro mockedVariableNameDeclaration variable %}{{ variable.name }}: {{ variable.typeName }}{% endmacro %}
-
-{% macro mockOptionalVariable variable %}{% call mockedVariableNameDeclaration variable %} = {% call mockOptionalValue %}{% endmacro %}
-{% macro mockOptionalValue %}nil{% endmacro %}
-
-{% macro createStub variable %}{% call mockedVariableNameDeclaration variable %} = {% call stubValue variable %}{% endmacro %}
-{% macro stubValue variable %}{% if variable.type|annotated:"AutoMockable" %}{{ variable.typeName }}Mock(){% else %}.stub(){% endif %}{% endmacro %}
-
-{% macro mockArrayVariable variable %}{% call mockedVariableNameDeclaration variable %} = {% call mockArrayValue %}{% endmacro %}
-{% macro mockArrayValue %}[]{% endmacro %}
-
-{% macro mockDictionaryVariable variable %}{% call mockedVariableNameDeclaration variable %} = {% call mockDictionaryValue %}{% endmacro %}
-{% macro mockDictionaryValue %}[:]{% endmacro %}
-
-{% macro protocolMockValue variable %}.stub(){% endmacro %}
-
-{% macro setVariableValue variable %}{% if variable.isOptional%}{% call mockOptionalVariable variable %}{% elif variable.isArray %}{% call mockedVariableNameDeclaration variable %} = []{% elif variable.isDictionary %}{% call mockedVariableNameDeclaration variable %} = [:]{% elif variable.type|annotated:"AutoStub" or variable.type|annotated:"AutoMockable" %}{% call createStub variable %}{% else %}{% call mockedVariableNameDeclaration variable %} = .init(){% endif %}{% endmacro %}
-
-{% for import in argument.autoMockableImports %}import {{ import }}{% endfor %}
-{% for import in argument.autoMockableTestableImports %}@testable import {{ import }}{% endfor %}
-
-{% for type in types.structs where type|annotated:"AutoStub" %}
-// {% for variable in type.variables %}{{ variable.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-extension {{ type.name }} {
-    public static func stub(
-        {% for variable in type.variables %}{% call setVariableValue variable %}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-    ) -> Self {
-        .init({% for variable in type.variables %}
-            {{ variable.name }}: {{ variable.name }}{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        )
-    }
-}
+{% for import in argument.autoMockableImports %}
+import {{ import }}
 {% endfor %}
 
-// -----------------------------------------------------------
-
-{% for type in types.enums where type|annotated:"AutoStub" %}
-extension {{type.name}} {
-    public static func stub(caseValue: {{ type.name }} = .{{ type.cases.first.name }}) -> Self {
-        caseValue
-    }
-}
+{% for import in argument.autoMockableTestableImports %}
+@testable import {{ import }}
 {% endfor %}
-
-// -----------------------------------------------------------
 
 {% macro swiftifyMethodName name %}{{ name | replace:"(","_" | replace:")","" | replace:":","_" | replace:"`","" | snakeToCamelCase | lowerFirstWord }}{% endmacro %}
 

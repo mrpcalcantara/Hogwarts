@@ -12,6 +12,7 @@ public struct MyStruct {
     let myInt: Int
     let myString: String
     let myAnotherStruct: AnotherStruct
+    let myProtocolRef: MyProtocol
 }
 
 /// sourcery: AutoStub
@@ -37,12 +38,14 @@ public struct AnotherInnerStruct {
 public enum MyEnum {
     case foo
     case bar
-
-    public static func stub() -> Self { .foo }
 }
 
-/// sourcery: AutoStub
+/// sourcery: AutoMockable
 public protocol MyProtocol {
     var myProp: String { get set }
     func test() -> String
+    func testWithParam(str: String) -> String
+    func testWithParam(tuple: (String, Int)) -> String
+    init(testParam1: Double)
+    init(testParam1: Double, myProp: String)
 }
